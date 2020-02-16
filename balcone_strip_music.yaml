@@ -1,0 +1,107 @@
+esphome:
+  name: balcone_strip 
+  platform: ESP32
+  board: pico32
+  includes:
+      - balcone_strip_music.h
+wifi:
+  ssid: !secret SSID
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Led Strip 1 Fallback Hotspot"
+    password: !secret wifi_password 
+
+
+custom_component:
+  - lambda: |-
+      auto udp_music = new MusicReceiver();
+      return {udp_music};
+light:
+    #  - platform: fastled_clockless
+    #chipset: WS2812B
+    #restore_mode: RESTORE_DEFAULT_OFF
+    #color_correct: [50%, 100%, 100%]
+    #rgb_order: GRB
+    #max_refresh_rate: 5ms
+  - platform: neopixelbus  
+    pin: GPIO25
+    num_leds: 300
+    type: GRB
+    name: "Atmosfera Balcone Sala"
+    effects:
+          - random:
+              name: "Random Color"
+              transition_length: 3s
+              update_interval: 10s
+          - addressable_color_wipe:
+              name: Santa is Coming
+              colors:
+                - red: 70%
+                  green: 80%
+                  blue: 80%
+                  num_leds: 1
+                - red: 0%
+                  green: 0%
+                  blue: 0%
+                  num_leds: 2
+              add_led_interval: 100ms
+          - addressable_fireworks:
+              name: Fireworks 
+              update_interval: 2ms
+              spark_probability: 90%
+              use_random_color: True
+              fade_out_rate: 255 
+          - addressable_flicker:
+              name: Flicker 
+              update_interval: 16ms
+              intensity: 10%
+          - addressable_scan:
+              name: Scan 
+              move_interval: 10ms
+              scan_width: 40    
+          - addressable_rainbow:
+              name: Rainbow 
+              speed: 10
+              width: 150
+          - addressable_color_wipe:
+              name: Color Wipe 
+              colors:
+               - num_leds: 300
+                 random: True
+              add_led_interval: 10ms
+              reverse: False
+          - addressable_lambda:
+              name: ARTNET
+              update_interval: 0s
+              lambda: |-
+                music_leds.ShowFrame(MODE_ARTNET, &it);
+          - addressable_lambda:
+              name: MUSIC
+              update_interval: 0s
+              lambda: |-
+                music_leds.ShowFrame(MODE_MUSIC, &it);
+
+
+# Enable logging
+logger:
+     level: DEBUG
+
+sensor:
+      - platform: wifi_signal
+        name: "WiFi Signal Sensor"
+        update_interval: 60s
+      - platform: uptime
+        name: "Uptime"
+
+switch:
+  - platform: restart
+    name: "ESP32 Restart"
+# Enable Home Assistant API
+api:
+     password: !secret api_password
+
+ota:
+     safe_mode: True
+     password: !secret ota_password
