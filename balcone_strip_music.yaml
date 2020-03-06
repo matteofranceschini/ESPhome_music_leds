@@ -19,16 +19,14 @@ custom_component:
       auto udp_music = new MusicReceiver();
       return {udp_music};
 light:
-    #  - platform: fastled_clockless
-    #chipset: WS2812B
-    #restore_mode: RESTORE_DEFAULT_OFF
-    #color_correct: [50%, 100%, 100%]
-    #rgb_order: GRB
-    #max_refresh_rate: 5ms
-  - platform: neopixelbus  
+  - platform: fastled_clockless
+    chipset: WS2812B
+    restore_mode: RESTORE_DEFAULT_OFF
+    color_correct: [50%, 100%, 100%]
+    rgb_order: GRB
+    ##    max_refresh_rate: 1ms
     pin: GPIO25
     num_leds: 300
-    type: GRB
     name: "Atmosfera Balcone Sala"
     effects:
           - random:
