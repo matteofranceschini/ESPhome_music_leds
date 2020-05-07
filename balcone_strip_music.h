@@ -3,11 +3,13 @@
 
 using namespace esphome;
 
-typedef struct rgbledstruct{
+typedef struct rgbledstruct
+{
     uint8_t r;
     uint8_t g;
     uint8_t b;
-}rgbLed_t;
+} rgbLed_t;
+
 // BUFFER_LEN: Maximum number of packets to hold in the buffer. Don't change
 // this.
 static const uint16_t BUFFER_LEN = 1024;
@@ -16,12 +18,13 @@ char packetBuffer[BUFFER_LEN];
 // variable that holds the lenght of the last packet received
 uint16_t packetlength = 0;
 // N_PIXELS: The number of the LEDS on the led strip, must be even.
-static const uint16_t N_PIXELS = 300;
+static const uint16_t N_PIXELS = 301;
 // The local led buffer
 rgbLed_t buffer_leds[N_PIXELS];
 // Variable that tells if new leds are ready to be changed
 bool new_led_available = false;
 
+//#define SINGLE_BYTE
 
 enum PLAYMODE
 {
@@ -58,21 +61,53 @@ void MusicLeds::ShowFrame(PLAYMODE CurrentMode, light::AddressableLight *p_it)
                 // packet is:
                 // byte 1,2: pixel number
                 // byte 3,4,5: r,g,b
-                for (uint16_t i = 0; i < packetlength; i += 5)
+#ifdef SINGLE_BYTE
+#define INCREMENT 4
+#else
+#define INCREMENT 5
+#endif
+                for (uint16_t i = 0; i < packetlength; i += INCREMENT)
                 {
                     packetBuffer[packetlength] = 0;
-                    pixel_number               = ((packetBuffer[i] << 8) +
-                                    packetBuffer[i + 1]);  // the pixel number
 
+#ifdef SINGLE_BYTE
+                    pixel_number = packetBuffer[i];
+#else
+                    pixel_number = ((packetBuffer[i] << 8) +
+                                    packetBuffer[i + 1]);  // the pixel number
+#endif
                     // Cannot write the pixel number if greater
                     if (pixel_number < p_it->size())
                     {
                         light::ESPColor c;
-                        c.r                   = (uint8_t)packetBuffer[i + 2];
-                        c.g                   = (uint8_t)packetBuffer[i + 3];
-                        c.b                   = (uint8_t)packetBuffer[i + 4];
-                        c.w                   = 0;
-                        (*p_it)[pixel_number] = c;  // pointer to the strip led
+#ifdef SINGLE_BYTE
+                        c.r = (uint8_t)packetBuffer[i + 1];
+                        c.g = (uint8_t)packetBuffer[i + 2];
+                        c.b = (uint8_t)packetBuffer[i + 3];
+#else
+                        c.r = (uint8_t)packetBuffer[i + 2];
+                        c.g = (uint8_t)packetBuffer[i + 3];
+                        c.b = (uint8_t)packetBuffer[i + 4];
+                        c.w = 0;
+#endif
+                        /*per diminuire il numero di dati da inviare sulla rete
+                         * "spalmo" il numero di led che mi arrivano sui tre
+                         * punti fondamentali: gli angoli e il centro*/
+                        // draw the effect on the first third
+                        /*                       if (pixel_number > 12)
+                                                   (*p_it)[pixel_number - 12] =
+                           c;
+                                               // draw the effect in the middle
+                                               if (pixel_number > p_it->size() /
+                           2)
+                                                   (*p_it)[((p_it->size() / 2))
+                           - pixel_number] = c;
+                                               // draw the effect in the last
+                           third
+                                               (*p_it)[p_it->size() -
+                           pixel_number] = c;
+                                               */
+                        (*p_it)[pixel_number] = c;
                     }
                 }
 
@@ -118,8 +153,17 @@ public:
         // If packets have been received, interpret the command
         if (packetSize)
         {
-            packetlength      = music_udp.read(packetBuffer, BUFFER_LEN);
-            new_led_available = true;
+            if (new_led_available == false)
+            {
+                packetlength      = music_udp.read(packetBuffer, BUFFER_LEN);
+                new_led_available = true;
+            }
+            else
+            {
+                // se ho già un pacchetto ricevuto ma non ancora letto, quello
+                // nuovo lo flusho
+                music_udp.flush();
+            }
         }
     }
 };

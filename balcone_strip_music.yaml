@@ -1,7 +1,9 @@
 esphome:
   name: balcone_strip 
-  platform: ESP32
-  board: pico32
+  platform: ESP8266
+  board: nodemcuv2
+  #  platform: ESP32
+  #board: pico32
   includes:
       - balcone_strip_music.h
 wifi:
@@ -19,67 +21,111 @@ custom_component:
       auto udp_music = new MusicReceiver();
       return {udp_music};
 light:
-  - platform: fastled_clockless
-    chipset: WS2812B
-    restore_mode: RESTORE_DEFAULT_OFF
+  - platform: partition
+    name: "Lato Sinistro"
     color_correct: [50%, 100%, 100%]
-    rgb_order: GRB
-    ##    max_refresh_rate: 1ms
-    pin: GPIO25
-    num_leds: 300
-    name: "Atmosfera Balcone Sala"
+    id: lato_sx
+    segments:
+      - id: balcone_sala
+        from: 0
+        to: 149
     effects:
-          - random:
-              name: "Random Color"
-              transition_length: 3s
-              update_interval: 10s
-          - addressable_color_wipe:
-              name: Santa is Coming
-              colors:
-                - red: 70%
-                  green: 80%
-                  blue: 80%
-                  num_leds: 1
-                - red: 0%
-                  green: 0%
-                  blue: 0%
-                  num_leds: 2
-              add_led_interval: 100ms
-          - addressable_fireworks:
-              name: Fireworks 
-              update_interval: 2ms
-              spark_probability: 90%
-              use_random_color: True
-              fade_out_rate: 255 
-          - addressable_flicker:
-              name: Flicker 
-              update_interval: 16ms
-              intensity: 10%
-          - addressable_scan:
-              name: Scan 
-              move_interval: 10ms
-              scan_width: 40    
-          - addressable_rainbow:
-              name: Rainbow 
-              speed: 10
-              width: 150
-          - addressable_color_wipe:
-              name: Color Wipe 
-              colors:
-               - num_leds: 300
-                 random: True
-              add_led_interval: 10ms
-              reverse: False
-          - addressable_lambda:
-              name: ARTNET
-              update_interval: 0s
-              lambda: |-
-                music_leds.ShowFrame(MODE_ARTNET, &it);
-          - addressable_lambda:
-              name: MUSIC
-              update_interval: 0s
-              lambda: |-
-                music_leds.ShowFrame(MODE_MUSIC, &it);
+      - addressable_scan:
+          name: Scan 
+          move_interval: 10ms
+          scan_width: 40   
+  - platform: partition
+    name: "Lato Destro"
+    color_correct: [100%, 100%, 100%]
+    id: lato_dx
+    segments:
+      - id: balcone_sala
+        from: 150
+        to: 299
+    effects:
+      - addressable_scan:
+          name: Scan 
+          move_interval: 10ms
+          scan_width: 40   
+  - platform: partition
+    name: "Balcone Sala"
+    segments:
+      - id: lato_sx
+        from: 0
+        to: 149
+      - id: lato_dx
+        from: 150
+        to: 299
+    effects:
+       - addressable_scan:
+           name: Scan 
+           move_interval: 10ms
+           scan_width: 40   
+
+  - platform: fastled_clockless
+    chipset: WS2812
+    restore_mode: RESTORE_DEFAULT_OFF
+    #    color_correct: [50%, 100%, 100%]
+    rgb_order: GRB
+    max_refresh_rate: 16ms
+    #   pin: GPIO19
+    pin: D5
+    num_leds: 300
+    name: "Luci Raw"
+    #    internal: true
+    id: balcone_sala
+    #    effects:
+    #          - random:
+    #              name: "Random Color"
+    #              transition_length: 3s
+    #              update_interval: 10s
+    #          - addressable_color_wipe:
+    #              name: Santa is Coming
+    #              colors:
+    #                - red: 70%
+    #                  green: 80%
+    #                  blue: 80%
+    #                  num_leds: 1
+    #                - red: 0%
+    #                  green: 0%
+    #                  blue: 0%
+    #                  num_leds: 2
+    #              add_led_interval: 100ms
+    #          - addressable_fireworks:
+    #              name: Fireworks 
+    #              update_interval: 2ms
+    #              spark_probability: 90%
+    #              use_random_color: True
+    #              fade_out_rate: 255 
+    #          - addressable_flicker:
+    #              name: Flicker 
+    #              update_interval: 16ms
+    #              intensity: 10%
+    #          - addressable_scan:
+    #              name: Scan 
+    #              move_interval: 10ms
+    #              scan_width: 40    
+    #          - addressable_rainbow:
+    #              name: Rainbow 
+    #              speed: 10
+    #              width: 150
+    #          - addressable_color_wipe:
+    #              name: Color Wipe 
+    #              colors:
+    #               - num_leds: 300
+    #                 random: True
+    #              add_led_interval: 10ms
+    #              reverse: False
+    #          - addressable_lambda:
+    #              name: ARTNET
+    #              update_interval: 0s
+    #              lambda: |-
+    #                music_leds.ShowFrame(MODE_ARTNET, &it);
+    #          - addressable_lambda:
+    #              name: MUSIC
+    #              update_interval: 0s
+    #              lambda: |-
+    #                music_leds.ShowFrame(MODE_MUSIC, &it);
 
 
 # Enable logging
@@ -92,6 +138,9 @@ sensor:
         update_interval: 60s
       - platform: uptime
         name: "Uptime"
+
+web_server:
+  port: 80
 
 switch:
   - platform: restart
