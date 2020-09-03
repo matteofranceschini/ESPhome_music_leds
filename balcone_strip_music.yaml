@@ -17,9 +17,9 @@ wifi:
 
 
 custom_component:
-  - lambda: |-
-      auto udp_music = new MusicReceiver();
-      return {udp_music};
+    - lambda: |-
+        auto udp_music = new MusicReceiver();
+        return {udp_music};
 light:
   - platform: partition
     name: "JT Balcone Lato Sinistro"
@@ -161,7 +161,24 @@ sensor:
         update_interval: 60s
       - platform: uptime
         name: "Uptime"
-
+      - platform: pulse_counter
+        pin: D1
+        id: geiger
+        name: "Geiger Counter"
+      - platform: template
+        name: "Radiation"
+        icon: "mdi:radioactive"
+        unit_of_measurement: "µSv/h"
+        update_interval: 1s
+        accuracy_decimals: 4
+        filters:
+          - sliding_window_moving_average:
+              window_size: 15
+              send_every: 6
+        lambda: |-
+            //this function will do the mean between the two values and provide
+            //the percent of salt remaining in the container.
+            return  ((id(geiger).state) *0.00812);
 web_server:
   port: 80
 
